@@ -1,0 +1,5 @@
+fastapi==0.103.2
+uvicorn==0.23.2
+kafka-python==2.0.2
+hdfs==2.7.3
+python-multipart==0.0.6

@@ -1,0 +1,21 @@
+docker exec -it kafka /bin/sh
+
+cd /opt/kafka_2.13-2.8.1/bin
+
+Creating a topic
+kafka-topics.sh --create --zookeeper zookeeper:2181 --replication-factor 1 --partitions 1 --topic items
+
+Listing Kafka topics
+kafka-topics.sh --list --zookeeper zookeeper:2181
+
+Getting details on a Kafka topic
+kafka-topics.sh --describe --zookeeper zookeeper:2181 --topic message
+
+Deleting a Kafka topic
+kafka-topics.sh --delete --zookeeper zookeeper:2181 --topic message
+
+Kafka console Producers:
+kafka-console-producer.sh --broker-list kafka:9092 --topic message
+
+Kafka console Consumers:
+kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic message
