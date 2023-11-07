@@ -13,16 +13,20 @@ import os
 
 app = FastAPI()
 
+kafka_servers = os.environ.get('KAFKA_HOST', 'localhost')
+kafka_port = os.environ.get('KAFKA_PORT', 9092)
+bootstrap_servers= f'{kafka_servers}:{kafka_port}'
+
 hdfs_host = os.environ.get('HDFS_HOST', 'namenode')
 hdfs_port = os.environ.get('HDFS_PORT', 9870)
-hdfs_user = os.environ.get('HDFS_user', 'hadoop')
+hdfs_user = os.environ.get('HDFS_USER', 'hadoop')
 hdfs_client = InsecureClient(f'http://{hdfs_host}:{hdfs_port}', user=hdfs_user)
 
-seaweedfs_host = os.environ.get('SEAWEEDFS_HOST', '172.16.1.198')
-seaweedfs_port = os.environ.get('SEAWEEDFS_HOST', 4001)
+seaweedfs_host = os.environ.get('SEAWEEDFS_HOST', 'localhost')
+seaweedfs_port = os.environ.get('SEAWEEDFS_PORT', 4001)
 seaweedfs_bucket = os.environ.get('SEAWEEDFS_BUCKET', 'storages')
-seaweedfs_url=f'http://{seaweedfs_host}:{seaweedfs_port}/{seaweedfs_bucket}'
-seaweed_domain='https://pickdeal.fujinet.net/storages/pickdeal/'
+seaweedfs_url = f'http://{seaweedfs_host}:{seaweedfs_port}/{seaweedfs_bucket}'
+seaweed_domain = 'https://pickdeal.fujinet.net/storages/pickdeal/'
 
 aws_access_key_id = os.environ.get('AWS_ACCESS_KEY_ID','Q3AM3UQ867SPQQA43P2F')
 aws_secret_access_key = os.environ.get('AWS_SECRET_ACCESS_KEY','zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG')
@@ -41,17 +45,26 @@ def serializer(message):
     return json.dumps(message).encode('utf-8')
 
 # Kafka Producer
-producer = KafkaProducer(
-    bootstrap_servers=['172.16.1.198:9092'],
-    value_serializer=serializer
-)
+# producer = KafkaProducer(
+#     bootstrap_servers=[bootstrap_servers],
+#     value_serializer=serializer
+# )
 
 @app.get('/')
 async def root():
-    return {'message': 'Hello HDFS'}
+    return {'message': {bootstrap_servers,
+                        hdfs_host,
+                        hdfs_port,
+                        seaweedfs_url,
+                        aws_access_key_id,
+                        aws_secret_access_key}}
 
 @app.post('/upload')
 async def upload_file(file: UploadFile=File(...), images: List[UploadFile]=File(...)):
+    producer = KafkaProducer(
+        bootstrap_servers=[bootstrap_servers],
+        value_serializer=serializer
+    )
     logging.info(f'Crawler calls API @app.post("/upload")')
     content = await file.read()
     time = str(int(round(datetime.datetime.now().timestamp())))

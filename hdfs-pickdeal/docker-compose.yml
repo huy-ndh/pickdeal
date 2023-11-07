@@ -1,37 +1,70 @@
 version: "3"
 services:
-  server:
-    build: ./source
-    command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload
-    ports:
-      - '5000:5000'
-  namenode:
-    image: apache/hadoop:3
-    hostname: namenode
-    command: ["hdfs", "namenode"]
-    ports:
-      - 9870:9870
-    env_file:
-      - ./config
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
     environment:
-        ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  namenode:
+      image: apache/hadoop:3
+      hostname: namenode
+      command: ["hdfs", "namenode"]
+      ports:
+        - 9870:9870
+      env_file:
+        - ./config
+      environment:
+          ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
   datanode:
     image: apache/hadoop:3
     command: ["hdfs", "datanode"]
     env_file:
       - ./config
-  # resourcemanager:
-  #   image: apache/hadoop:3
-  #   hostname: resourcemanager
-  #   command: ["yarn", "resourcemanager"]
-  #   ports:
-  #       - 8088:8088
-  #   env_file:
-  #     - ./config
-  #   volumes:
-  #     - ./test.sh:/opt/test.sh
-  # nodemanager:
-  #   image: apache/hadoop:3
-  #   command: ["yarn", "nodemanager"]
-  #   env_file:
-  #     - ./config
+  resourcemanager:
+    image: apache/hadoop:3
+    hostname: resourcemanager
+    command: ["yarn", "resourcemanager"]
+    ports:
+        - 8088:8088
+    env_file:
+      - ./config
+    volumes:
+      - ./test.sh:/opt/test.sh
+  nodemanager:
+    image: apache/hadoop:3
+    command: ["yarn", "nodemanager"]
+    env_file:
+      - ./config
+  server:
+    build: ./source
+    ports:
+      - 5000:5000
+    command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+    environment:
+      KAFKA_HOST: 'kafka'
+      KAFKA_PORT: 9092
+      HDFS_HOST: 'namenode'
+      HDFS_PORT: 9870
+      HDFS_USER: 'hadoop'
+      SEAWEEDFS_HOST: 'localhost'
+      SEAWEEDFS_PORT: 4001
+      SEAWEEDS_BUCKET: 'storages'
+      AWS_ACCESS_KEY_ID: 'Q3AM3UQ867SPQQA43P2F'
+      AWS_SECRET_ACCESS_KEY: 'zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG'
+    depends_on:
+      - namenode
+      - kafka

@@ -9,13 +9,13 @@ Listing Kafka topics
 kafka-topics.sh --list --zookeeper zookeeper:2181
 
 Getting details on a Kafka topic
-kafka-topics.sh --describe --zookeeper zookeeper:2181 --topic message
+kafka-topics.sh --describe --zookeeper zookeeper:2181 --topic items
 
 Deleting a Kafka topic
-kafka-topics.sh --delete --zookeeper zookeeper:2181 --topic message
+kafka-topics.sh --delete --zookeeper zookeeper:2181 --topic items
 
 Kafka console Producers:
-kafka-console-producer.sh --broker-list kafka:9092 --topic message
+kafka-console-producer.sh --broker-list kafka:9092 --topic items
 
 Kafka console Consumers:
-kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic message
+kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic items
